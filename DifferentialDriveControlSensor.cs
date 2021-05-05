@@ -16,7 +16,7 @@ namespace Simulator.Sensors
     [SensorType("Differential Drive Control", new System.Type[] { typeof(AutowareVehicleControlData) })]
     public class DifferentialDriveControlSensor : SensorBase
     {
-        VehicleController Controller;
+        IAgentController Controller;
         IVehicleDynamics Dynamics;
 
         [SensorParameter]
@@ -32,20 +32,15 @@ namespace Simulator.Sensors
         private void Awake()
         {
             LastControlUpdate = SimulatorManager.Instance.CurrentTime;
-            Controller = GetComponentInParent<VehicleController>();
+            Controller = GetComponentInParent<IAgentController>();
             Dynamics = GetComponentInParent<IVehicleDynamics>();
-        }
-
-        private void Update()
-        {
-
         }
 
         private void FixedUpdate()
         {
             if (SimulatorManager.Instance.CurrentTime - LastControlUpdate < 0.5f)
             {
-
+                //
             }
         }
 
