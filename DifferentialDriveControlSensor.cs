@@ -36,6 +36,16 @@ namespace Simulator.Sensors
             Dynamics = GetComponentInParent<IVehicleDynamics>();
         }
 
+        protected override void Initialize()
+        {
+
+        }
+
+        protected override void Deinitialize()
+        {
+
+        }
+
         private void FixedUpdate()
         {
             if (SimulatorManager.Instance.CurrentTime - LastControlUpdate < 0.5f)
