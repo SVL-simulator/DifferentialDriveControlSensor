@@ -1,0 +1,24 @@
+[
+  {
+    "name": "Keyboard Control Sensor",
+    "parent": null,
+    "type": "KeyboardControlSensor",
+    "transform": null,
+    "plugin": {
+      "type": "KeyboardControlSensor"
+    },
+    "params": null
+  },
+  {
+    "name": "Differential Drive Control",
+    "parent": null,
+    "type": null,
+    "transform": null,
+    "plugin": {
+    },
+    "params": {
+      "leftWheelLinkPath": "link_MainBody/SuspensionLeft/link/wheel_left/link",
+      "rightWheelLinkPath": "link_MainBody/SuspensionRight/link/wheel_right/link"
+    }
+  }
+]
