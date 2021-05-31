@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace Simulator.Sensors
 {
-    [SensorType("Differential Drive Control", new System.Type[] { typeof(DifferentialDriveControlData), typeof(DifferentialDriveOdometry) })]
+    [SensorType("Differential Drive Control", new System.Type[] { typeof(DifferentialDriveControlData), typeof(Bridge.Ros2.Ros.Odometry) })]
     public class DifferentialDriveControlSensor : SensorBase, IVehicleInputs
     {
         private IAgentController Controller;
@@ -181,21 +181,20 @@ namespace Simulator.Sensors
                 ADSteerInput = data.AngularVelocity;
             });
             Bridge = bridge;
-            Publish = bridge.AddPublisher<DifferentialDriveOdometry>(Topic);
+            Publish = bridge.AddPublisher<Bridge.Ros2.Ros.Odometry>(Topic);
         }
 
         [SensorParameter]
         [Range(1f, 100f)]
         public float Frequency = 10.0f;
-        private DifferentialDriveOdometry odom;
+        private Bridge.Ros2.Ros.Odometry odom;
 
         [AnalysisMeasurement(MeasurementType.Distance)]
         private float Distance = 0f;
         private Vector3 PrevPos = new Vector3(0f, 0f, 0f);
         private float NextSend;
         private BridgeInstance Bridge;
-        private Publisher<DifferentialDriveOdometry> Publish;
-
+        private Publisher<Bridge.Ros2.Ros.Odometry> Publish;
 
         public override System.Type GetDataBridgePlugin()
         {
@@ -320,6 +319,16 @@ namespace Simulator.Sensors
             _lastTheta = 0.0f;
         }
 
+
+        static readonly double[] defaultCovariance = new double[]
+                    {
+                        0.0001, 0, 0, 0, 0, 0,
+                        0, 0.0001, 0, 0, 0, 0,
+                        0, 0, 0.0001, 0, 0, 0,
+                        0, 0, 0, 0.0001, 0, 0,
+                        0, 0, 0, 0, 0.0001, 0,
+                        0, 0, 0, 0, 0, 0.0001
+                    };
         public void UpdateOdom(float duration)
         {
             var angularVelocityLeft = -LeftMotor.GetCurrentVelocity() * Mathf.Deg2Rad;
@@ -327,36 +336,41 @@ namespace Simulator.Sensors
             var yaw = ImuOrientation.eulerAngles.y * Mathf.Deg2Rad;
             CalculateOdometry(duration, angularVelocityLeft, angularVelocityRight, yaw);
 
-            odom = new DifferentialDriveOdometry()
+            odom = new Bridge.Ros2.Ros.Odometry
             {
-                AngularVelocity =
-                {
-                    Left = angularVelocityLeft,
-                    Right = angularVelocityRight
-                },
-                LinearVelocity =
-                {
-                     Left = angularVelocityLeft * WheelRadius,
-                     Right = angularVelocityRight * WheelRadius
-                },
-                TwistAngular =
-                {
-                    x = 0,
-                    y = 0,
-                    z = -_odomVelocity.y
 
+                pose = {
+                    pose= {
+                            position = {
+                                x =  _odomPose.x,
+                                y = -_odomPose.y,
+                                z = -_odomPose.z,
+                            },
+                            orientation = {
+                                x = -ImuOrientation.z,
+                                y = ImuOrientation.x,
+                                z = ImuOrientation.y,
+                                w = ImuOrientation.w
+                            }
+
+                    },
+                    covariance = defaultCovariance
                 },
-                TwistLinear =
-                {
-                    x = _odomVelocity.x,
-                    y = 0,
-                    z = 0
-                },
-                Pose =
-                {
-                    x = _odomPose.x,
-                    y = -_odomPose.y,
-                    z = -_odomPose.z,
+                twist = {
+                    twist = {
+                        angular = {
+                            x = 0,
+                            y = 0,
+                            z = -_odomVelocity.y,
+                        },
+                        linear = {
+                            x = _odomVelocity.x,
+                            y = 0,
+                            z = 0
+                        }
+                    },
+                    covariance = defaultCovariance
+
                 }
             };
         }

@@ -10,24 +10,6 @@ using Simulator.Bridge;
 
 namespace Simulator.Sensors
 {
-    public struct WheelData
-    {
-        public float Left;
-        public float Right;
-    }
-
-    // actual ROS type
-    // can use anything from Simulator.Bridge.Ros.Ros namespace
-    [Bridge.Ros2.MessageType("lgsvl_msgs/DifferentialDriveOdometry")]
-    public struct DifferentialDriveOdometry
-    {
-        public WheelData AngularVelocity;
-        public WheelData LinearVelocity;
-        public Bridge.Ros2.Ros.Vector3 Pose;
-        public Bridge.Ros2.Ros.Vector3 TwistLinear;
-        public Bridge.Ros2.Ros.Vector3 TwistAngular;
-    }
-
     public class DifferentialDriveControlData
     {
         public float LinearVelocity;
@@ -41,7 +23,7 @@ namespace Simulator.Sensors
             if (plugin.Factory is Bridge.Ros2.Ros2BridgeFactory)
             {
                 plugin.Factory.RegSubscriber<DifferentialDriveControlData, Bridge.Ros2.Ros.Twist>(plugin, ConvertMsg);
-                plugin.Factory.RegPublisher(plugin, (DifferentialDriveOdometry data) => data);
+                plugin.Factory.RegPublisher(plugin, (Bridge.Ros2.Ros.Odometry data) => data);
             }
         }
 
