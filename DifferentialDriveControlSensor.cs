@@ -40,6 +40,12 @@ namespace Simulator.Sensors
         [SensorParameter]
         public float D_Gain = 0.0f;
 
+        [SensorParameter]
+        public string OdometryTopic;
+
+        [SensorParameter]
+        public string OdometryChildFrame;
+
         double LastControlUpdate = 0f;
 
         private ArticulationBody RightWheel;
@@ -181,7 +187,7 @@ namespace Simulator.Sensors
                 ADSteerInput = data.AngularVelocity;
             });
             Bridge = bridge;
-            Publish = bridge.AddPublisher<Bridge.Ros2.Ros.Odometry>(Topic);
+            Publish = bridge.AddPublisher<Bridge.Ros2.Ros.Odometry>(OdometryTopic);
         }
 
         [SensorParameter]
@@ -338,7 +344,7 @@ namespace Simulator.Sensors
 
             odom = new Bridge.Ros2.Ros.Odometry
             {
-
+                child_frame_id = OdometryChildFrame,
                 pose = {
                     pose= {
                             position = {
