@@ -341,9 +341,20 @@ namespace Simulator.Sensors
             var angularVelocityRight = -RightMotor.GetCurrentVelocity() * Mathf.Deg2Rad;
             var yaw = ImuOrientation.eulerAngles.y * Mathf.Deg2Rad;
             CalculateOdometry(duration, angularVelocityLeft, angularVelocityRight, yaw);
+            var time = SimulatorManager.Instance.CurrentTime;
+            long nanosec = (long)(time * 1e9);
 
             odom = new Bridge.Ros2.Ros.Odometry
             {
+                header = new Bridge.Ros2.Ros.Header()
+                {
+                    stamp = new Bridge.Ros2.Ros.Time()
+                    {
+                        secs = (int)(nanosec / 1000000000),
+                        nsecs = (uint)(nanosec % 1000000000),
+                    },
+                    frame_id = Frame,
+                },
                 child_frame_id = OdometryChildFrame,
                 pose = {
                     pose= {
