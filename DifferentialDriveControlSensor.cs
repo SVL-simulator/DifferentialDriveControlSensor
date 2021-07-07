@@ -366,7 +366,7 @@ namespace Simulator.Sensors
                             orientation = {
                                 x = -ImuOrientation.z,
                                 y = ImuOrientation.x,
-                                z = ImuOrientation.y,
+                                z = -ImuOrientation.y,
                                 w = ImuOrientation.w
                             }
 
