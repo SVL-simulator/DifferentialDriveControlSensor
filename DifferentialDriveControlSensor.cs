@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace Simulator.Sensors
 {
-    [SensorType("Differential Drive Control", new System.Type[] { typeof(DifferentialDriveControlData), typeof(Bridge.Ros2.Ros.Odometry) })]
+    [SensorType("Differential Drive Control", new System.Type[] { typeof(DifferentialDriveControlData), typeof(Bridge.Data.Ros.Odometry) })]
     public class DifferentialDriveControlSensor : SensorBase, IVehicleInputs
     {
         private IAgentController Controller;
@@ -174,7 +174,7 @@ namespace Simulator.Sensors
 
         public override void OnBridgeSetup(BridgeInstance bridge)
         {
-            if (!(bridge.Plugin.Factory is Simulator.Bridge.Ros2.Ros2BridgeFactory))
+            if (!(bridge.Plugin.GetBridgeNameAttribute().Name == "ROS2"))
             {
                 Debug.LogWarning("DifferentialDriveControlSensor only works with ROS2 bridge.");
                 return;
@@ -187,20 +187,20 @@ namespace Simulator.Sensors
                 ADSteerInput = data.AngularVelocity;
             });
             Bridge = bridge;
-            Publish = bridge.AddPublisher<Bridge.Ros2.Ros.Odometry>(OdometryTopic);
+            Publish = bridge.AddPublisher<Bridge.Data.Ros.Odometry>(OdometryTopic);
         }
 
         [SensorParameter]
         [Range(1f, 100f)]
         public float Frequency = 10.0f;
-        private Bridge.Ros2.Ros.Odometry odom;
+        private Bridge.Data.Ros.Odometry odom;
 
         [AnalysisMeasurement(MeasurementType.Distance)]
         private float Distance = 0f;
         private Vector3 PrevPos = new Vector3(0f, 0f, 0f);
         private float NextSend;
         private BridgeInstance Bridge;
-        private Publisher<Bridge.Ros2.Ros.Odometry> Publish;
+        private Publisher<Bridge.Data.Ros.Odometry> Publish;
 
         public override System.Type GetDataBridgePlugin()
         {
@@ -344,11 +344,11 @@ namespace Simulator.Sensors
             var time = SimulatorManager.Instance.CurrentTime;
             long nanosec = (long)(time * 1e9);
 
-            odom = new Bridge.Ros2.Ros.Odometry
+            odom = new Bridge.Data.Ros.Odometry
             {
-                header = new Bridge.Ros2.Ros.Header()
+                header = new Bridge.Data.Ros.Header()
                 {
-                    stamp = new Bridge.Ros2.Ros.Time()
+                    stamp = new Bridge.Data.Ros.Time()
                     {
                         secs = (int)(nanosec / 1000000000),
                         nsecs = (uint)(nanosec % 1000000000),
