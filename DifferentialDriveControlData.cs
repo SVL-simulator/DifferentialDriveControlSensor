@@ -20,14 +20,14 @@ namespace Simulator.Sensors
     {
         public void Register(IBridgePlugin plugin)
         {
-            if (plugin.Factory is Bridge.Ros2.Ros2BridgeFactory)
+            if (plugin.GetBridgeNameAttribute().Name == "ROS2")
             {
-                plugin.Factory.RegSubscriber<DifferentialDriveControlData, Bridge.Ros2.Ros.Twist>(plugin, ConvertMsg);
-                plugin.Factory.RegPublisher(plugin, (Bridge.Ros2.Ros.Odometry data) => data);
+                plugin.Factory.RegSubscriber<DifferentialDriveControlData, Bridge.Data.Ros.Twist>(plugin, ConvertMsg);
+                plugin.Factory.RegPublisher(plugin, (Bridge.Data.Ros.Odometry data) => data);
             }
         }
 
-        public DifferentialDriveControlData ConvertMsg(Bridge.Ros2.Ros.Twist data)
+        public DifferentialDriveControlData ConvertMsg(Bridge.Data.Ros.Twist data)
         {
             return new DifferentialDriveControlData()
             {
