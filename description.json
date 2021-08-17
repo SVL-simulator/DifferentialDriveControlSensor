@@ -2,7 +2,7 @@
   "id": "6bee1cb8-1be9-417a-9cbb-7fcf2eed9600",
   "name": "Differential Drive Control Sensor",
   "accessType": "public",
-  "description": "TEST",
+  "description": "The **Differential Drive Control** plugin provides a means for driving differential drive robots (ego) vehicles. Differential drive is a drive mechanism commonly used in mobile robots where two wheels are mounted on a common axis and each is capable of being driven forward or backward independently.\n\nDifferential drive robots often have wheel encoders that precisely track the rotation of each wheel. The rotation of each wheel can be used both as feedback for a closed loop controller to precisely control the robot motion, and for dead reckoning.\n\nFor more details, check: <{{DOCS_HOST}}/docs/simulation-content/differential-drive-control>",
   "licenseName": "LG Content",
   "copyright": "LG Electronics Inc.",
   "tags": [
@@ -13,7 +13,7 @@
       "name": "Control"
     },
     {
-      "name": "Default"
+      "name": "Robotics"
     }
   ]
 }
