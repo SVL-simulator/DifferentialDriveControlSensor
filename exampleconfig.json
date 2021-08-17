@@ -1,24 +1,24 @@
 [
   {
-    "name": "Keyboard Control Sensor",
-    "parent": null,
-    "type": "KeyboardControlSensor",
-    "transform": null,
-    "plugin": {
-      "type": "KeyboardControlSensor"
+    "params": {
+      "OdometryTopic": "/odom",
+      "Topic": "/cmd_vel",
+      "OdometryChildFrame": "odom",
+      "Frame": "base_footprint",
+      "RightWheelLinkPath": "link_MainBody/SuspensionRight/link/wheel_right/link",
+      "LeftWheelLinkPath": "link_MainBody/SuspensionLeft/link/wheel_left/link"
     },
-    "params": null
+    "name": "Differential Drive Control Sensor",
+    "parent": null,
+    "type": "DifferentialDriveControlSensor"
   },
   {
-    "name": "Differential Drive Control",
-    "parent": null,
-    "type": null,
-    "transform": null,
-    "plugin": {
-    },
     "params": {
-      "leftWheelLinkPath": "link_MainBody/SuspensionLeft/link/wheel_left/link",
-      "rightWheelLinkPath": "link_MainBody/SuspensionRight/link/wheel_right/link"
-    }
+      "InvertAccel": true,
+      "InvertSteer": false
+    },
+    "name": "Keyboard Control Sensor",
+    "parent": null,
+    "type": "KeyboardControlSensor"
   }
 ]
