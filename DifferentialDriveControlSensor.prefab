@@ -49,9 +49,11 @@ MonoBehaviour:
   ParentTransform: {fileID: 0}
   WheelRadius: 0
   WheelSeparation: 0
-  LeftWheelLinkPath: 
-  RightWheelLinkPath: 
+  LeftWheelLinkPath: link_MainBody/SuspensionLeft/link/wheel_left/link
+  RightWheelLinkPath: link_MainBody/SuspensionRight/link/wheel_right/link
   P_Gain: 1
   I_Gain: 0.05
   D_Gain: 0
+  OdometryTopic: 
+  OdometryChildFrame: 
   Frequency: 10

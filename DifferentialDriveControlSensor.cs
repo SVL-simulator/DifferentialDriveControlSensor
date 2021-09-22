@@ -20,16 +20,16 @@ namespace Simulator.Sensors
         private IVehicleDynamics Dynamics;
 
         [SensorParameter]
-        public float WheelRadius;
+        public float WheelRadius = 0f;
         private float DivideWheelRadius = 0.0f;
 
         [SensorParameter]
-        public float WheelSeparation;
+        public float WheelSeparation = 0f;
 
         [SensorParameter]
-        public string LeftWheelLinkPath;
+        public string LeftWheelLinkPath = "link_MainBody/SuspensionLeft/link/wheel_left/link";
         [SensorParameter]
-        public string RightWheelLinkPath;
+        public string RightWheelLinkPath = "link_MainBody/SuspensionRight/link/wheel_right/link";
 
         [SensorParameter]
         public float P_Gain = 1.0f;
@@ -57,8 +57,29 @@ namespace Simulator.Sensors
         private float ADAccelInput = 0f;
         private float ADSteerInput = 0f;
 
+        private float _lastTheta = 0.0f;
+        private Vector3 _odomPose = Vector3.zero;
+        private Vector2 _odomVelocity = Vector2.zero;
+
+        [SensorParameter]
+        [Range(1f, 100f)]
+        public float Frequency = 10.0f;
+        private Bridge.Data.Ros.Odometry odom;
+
+        [AnalysisMeasurement(MeasurementType.Distance)]
+        private float Distance = 0f;
+        private Vector3 PrevPos = new Vector3(0f, 0f, 0f);
+        private float NextSend;
+        private BridgeInstance Bridge;
+        private Publisher<Bridge.Data.Ros.Odometry> Publish;
+
+        private bool IsInit = false;
+
         protected override void Initialize()
         {
+            if (IsInit)
+                return;
+
             NextSend = Time.time + 1.0f / Frequency;
             ImuInitialRotation = transform.rotation.eulerAngles;
             PreviousImuPosition = transform.position;
@@ -77,8 +98,26 @@ namespace Simulator.Sensors
             Dynamics = GetComponentInParent<IVehicleDynamics>();
 
             LastControlUpdate = SimulatorManager.Instance.CurrentTime;
-            LeftWheel = Controller.AgentGameObject.transform.Find(LeftWheelLinkPath).GetComponent<ArticulationBody>(); ;
-            RightWheel = Controller.AgentGameObject.transform.Find(RightWheelLinkPath).GetComponent<ArticulationBody>(); ;
+
+            try
+            {
+                LeftWheel = Controller.AgentGameObject.transform.Find(LeftWheelLinkPath).GetComponent<ArticulationBody>();
+            }
+            catch
+            {
+                Debug.LogError($"Incorrect wheel link path, please fix {LeftWheelLinkPath}");
+                return;
+            }
+
+            try
+            {
+                RightWheel = Controller.AgentGameObject.transform.Find(RightWheelLinkPath).GetComponent<ArticulationBody>();
+            }
+            catch
+            {
+                Debug.LogError($"Incorrect wheel link path, please fix {RightWheelLinkPath}");
+                return;
+            }
 
             if (RightWheel == null || LeftWheel == null)
             {
@@ -105,16 +144,16 @@ namespace Simulator.Sensors
                     // FIXME test this branch
                     WheelRadius = collider.bounds.extents.x;
                 }
-
-                DivideWheelRadius = 1.0f / WheelRadius;
             }
 
+            DivideWheelRadius = 1.0f / WheelRadius;
             LeftMotor = LeftWheel.gameObject.AddComponent<Motor>();
             LeftMotor.SetTargetJoint(LeftWheel);
             LeftMotor.SetPID(P_Gain, I_Gain, D_Gain);
             RightMotor = LeftWheel.gameObject.AddComponent<Motor>();
             RightMotor.SetTargetJoint(RightWheel);
             RightMotor.SetPID(P_Gain, I_Gain, D_Gain);
+            IsInit = true;
         }
 
         protected override void Deinitialize()
@@ -125,6 +164,9 @@ namespace Simulator.Sensors
 
         private void FixedUpdate()
         {
+            if (!IsInit)
+                return;
+
             if (SimulatorManager.Instance.CurrentTime - LastControlUpdate < 0.5f)
             {
                 SteerInput = ADSteerInput;
@@ -156,6 +198,7 @@ namespace Simulator.Sensors
 
             SetDifferentialDrive(linearVelocityLeft, linearVelocityRight);
         }
+
         public void SetDifferentialDrive(float linearVelocityLeft, float linearVelocityRight)
         {
             var angularVelocityLeft = linearVelocityLeft * DivideWheelRadius * Mathf.Rad2Deg;
@@ -190,18 +233,6 @@ namespace Simulator.Sensors
             Publish = bridge.AddPublisher<Bridge.Data.Ros.Odometry>(OdometryTopic);
         }
 
-        [SensorParameter]
-        [Range(1f, 100f)]
-        public float Frequency = 10.0f;
-        private Bridge.Data.Ros.Odometry odom;
-
-        [AnalysisMeasurement(MeasurementType.Distance)]
-        private float Distance = 0f;
-        private Vector3 PrevPos = new Vector3(0f, 0f, 0f);
-        private float NextSend;
-        private BridgeInstance Bridge;
-        private Publisher<Bridge.Data.Ros.Odometry> Publish;
-
         public override System.Type GetDataBridgePlugin()
         {
             return typeof(DifferentialDriveControlPlugin);
@@ -213,8 +244,8 @@ namespace Simulator.Sensors
 
             var graphData = new Dictionary<string, object>()
             {
-                {"TargetLinearVelocity", TargetAngularVelocity},
-                {"TargetAngularVelocity", TargetLinearVelocity},
+                {"TargetLinearVelocity", TargetLinearVelocity * -1}, // FIXME odd inversion hack
+                {"TargetAngularVelocity", TargetAngularVelocity * -1}, // FIXME odd inversion hack
                 {"Speed", Dynamics.Velocity.magnitude},
                 {"LastControlUpdate", LastControlUpdate},
             };
@@ -225,10 +256,14 @@ namespace Simulator.Sensors
 
         public void Update()
         {
+            if (!IsInit)
+                return;
+
             if (SimulatorManager.Instance.CurrentTime - LastControlUpdate >= 0.5)
             {
                 ADAccelInput = ADSteerInput = SteerInput = AccelInput = 0.0f;
             }
+
             // distance analysis
             Distance += Vector3.Distance(transform.position, PrevPos) / 1000;
             PrevPos = transform.position;
@@ -237,6 +272,7 @@ namespace Simulator.Sensors
             {
                 return;
             }
+
             NextSend = Time.time + 1.0f / Frequency;
 
             if (Bridge != null && Bridge.Status == Status.Connected)
@@ -248,6 +284,7 @@ namespace Simulator.Sensors
                 Debug.Log($"{Bridge != null} {Bridge?.Status}");
             }
         }
+
         /// <summary>Calculate odometry on this robot</summary>
         /// <remarks>rad per second for `theta`</remarks>
         private void CalculateOdometry(float duration, float angularVelocityLeftWheel, float angularVelocityRightWheel, float theta)
@@ -292,7 +329,8 @@ namespace Simulator.Sensors
 
             _lastTheta = theta;
         }
-        void UpdateIMU()
+
+        private void UpdateIMU()
         {
             // Caculate orientation and acceleration
             var imuRotation = transform.rotation.eulerAngles - ImuInitialRotation;
@@ -311,9 +349,6 @@ namespace Simulator.Sensors
             PreviousImuPosition = currentPosition;
             PreviousLinearVelocity = currentLinearVelocity;
         }
-        private float _lastTheta = 0.0f;
-        private Vector3 _odomPose = Vector3.zero;
-        private Vector2 _odomVelocity = Vector2.zero;
 
         public void Reset()
         {
@@ -325,16 +360,16 @@ namespace Simulator.Sensors
             _lastTheta = 0.0f;
         }
 
-
         static readonly double[] defaultCovariance = new double[]
-                    {
-                        0.0001, 0, 0, 0, 0, 0,
-                        0, 0.0001, 0, 0, 0, 0,
-                        0, 0, 0.0001, 0, 0, 0,
-                        0, 0, 0, 0.0001, 0, 0,
-                        0, 0, 0, 0, 0.0001, 0,
-                        0, 0, 0, 0, 0, 0.0001
-                    };
+        {
+            0.0001, 0, 0, 0, 0, 0,
+            0, 0.0001, 0, 0, 0, 0,
+            0, 0, 0.0001, 0, 0, 0,
+            0, 0, 0, 0.0001, 0, 0,
+            0, 0, 0, 0, 0.0001, 0,
+            0, 0, 0, 0, 0, 0.0001
+        };
+
         public void UpdateOdom(float duration)
         {
             var angularVelocityLeft = -LeftMotor.GetCurrentVelocity() * Mathf.Deg2Rad;
@@ -358,18 +393,17 @@ namespace Simulator.Sensors
                 child_frame_id = OdometryChildFrame,
                 pose = {
                     pose= {
-                            position = {
-                                x =  _odomPose.x,
-                                y = -_odomPose.y,
-                                z = -_odomPose.z,
-                            },
-                            orientation = {
-                                x = -ImuOrientation.z,
-                                y = ImuOrientation.x,
-                                z = -ImuOrientation.y,
-                                w = ImuOrientation.w
-                            }
-
+                        position = {
+                            x =  _odomPose.x,
+                            y = -_odomPose.y,
+                            z = -_odomPose.z,
+                        },
+                        orientation = {
+                            x = -ImuOrientation.z,
+                            y = ImuOrientation.x,
+                            z = -ImuOrientation.y,
+                            w = ImuOrientation.w
+                        }
                     },
                     covariance = defaultCovariance
                 },
@@ -387,7 +421,6 @@ namespace Simulator.Sensors
                         }
                     },
                     covariance = defaultCovariance
-
                 }
             };
         }
